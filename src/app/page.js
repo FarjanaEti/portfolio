@@ -1,14 +1,26 @@
 "use client";
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import gsap from 'gsap';
+import { SplitText } from 'gsap/SplitText';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 
 export default function Home() {
   const containerRef = useRef(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
-    // 1. Initialize Lenis Smooth Scroll
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  useEffect(() => {
+    // ── Lenis smooth scroll ────────────────────────────────────────────────────
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -20,156 +32,233 @@ export default function Home() {
       touchMultiplier: 2,
       infinite: false,
     });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
+    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
     requestAnimationFrame(raf);
 
-    // 2. GSAP ScrollTrigger
-    gsap.registerPlugin(ScrollTrigger);
-
-    // Connect Lenis to GSAP
+    // ── GSAP plugins ──────────────────────────────────────────────────────────
+    gsap.registerPlugin(SplitText, ScrollTrigger);
     lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
-    });
+    gsap.ticker.add((time) => { lenis.raf(time * 1000); });
     gsap.ticker.lagSmoothing(0, 0);
 
-    // 3. Animations
-    const sections = gsap.utils.toArray('.anim-section');
-    sections.forEach(sec => {
-      gsap.fromTo(sec,
-        { opacity: 0, y: 80 },
+    // ── gsap.context for scoped React cleanup ─────────────────────────────────
+    const ctx = gsap.context(() => {
+
+      // ── 1. Greeting Text — char split with 3D flip ──────────────────────────
+      const greetSplit = new SplitText('.greeting-text', { type: 'chars,words' });
+      const greetChars = greetSplit.chars;
+
+      // Separate name chars for colour flash
+      const nameEl = document.querySelector('.greeting-text .name');
+      const nameSplit = new SplitText(nameEl, { type: 'chars' });
+
+      gsap.set(greetChars, { opacity: 0, y: 80, rotationX: -90, transformPerspective: 600 });
+      gsap.to(greetChars, {
+        opacity: 1, y: 0, rotationX: 0,
+        stagger: 0.03, duration: 0.7, ease: 'back.out(1.7)', delay: 0.3,
+        onComplete() {
+          // Colour flash on .name chars: start purple → settle to CSS colour
+          gsap.fromTo(nameSplit.chars,
+            { color: '#a78bfa' },
+            { color: '', duration: 0.6, stagger: 0.05, ease: 'power2.out' }
+          );
+        },
+      });
+
+      // ── 2. Role Text — word slide-up with skew ───────────────────────────────
+      const roleSplit = new SplitText('.role-text', { type: 'words' });
+      gsap.set(roleSplit.words, { opacity: 0, y: 60, skewX: 8 });
+      gsap.to(roleSplit.words, {
+        opacity: 1, y: 0, skewX: 0,
+        stagger: 0.12, duration: 0.8, ease: 'power3.out', delay: 0.9,
+      });
+
+      // ── 3. Right title — line clip-path reveal ───────────────────────────────
+      const titleSplit = new SplitText('.right-title', {
+        type: 'lines',
+        linesClass: 'line-wrap',
+      });
+      // Wrap each line so overflow is hidden (clip illusion)
+      titleSplit.lines.forEach(line => {
+        const parent = line.parentNode;
+        const wrapper = document.createElement('div');
+        wrapper.style.overflow = 'hidden';
+        wrapper.style.display = 'block';
+        parent.insertBefore(wrapper, line);
+        wrapper.appendChild(line);
+      });
+      gsap.set(titleSplit.lines, { y: '100%', opacity: 0 });
+      gsap.to(titleSplit.lines, {
+        y: '0%', opacity: 1,
+        stagger: 0.15, duration: 0.9, ease: 'power4.out', delay: 1.1,
+      });
+
+      // ── 4. Right desc — word fade scroll-triggered ───────────────────────────
+      const descSplit = new SplitText('.right-desc', { type: 'words' });
+      gsap.set(descSplit.words, { opacity: 0, y: 20 });
+      gsap.to(descSplit.words, {
+        opacity: 1, y: 0,
+        stagger: 0.04, duration: 0.5, ease: 'power2.out',
+        scrollTrigger: {
+          trigger: '.right-desc',
+          start: 'top 85%',
+        },
+      });
+
+      // ── 5. Buttons — elastic bounce entrance + hover scale ───────────────────
+      gsap.set(['.hire-btn', '.download-cv', '.chat-btn'], { scale: 0, opacity: 0 });
+      gsap.to(['.hire-btn', '.download-cv', '.chat-btn'], {
+        scale: 1, opacity: 1,
+        ease: 'elastic.out(1, 0.5)', duration: 1,
+        stagger: 0.15, delay: 1.5,
+      });
+
+      // Hover scale for hire-btn
+      const hireBtn = document.querySelector('.hire-btn');
+      if (hireBtn) {
+        const onEnter = () => gsap.to(hireBtn, { scale: 1.05, duration: 0.2 });
+        const onLeave = () => gsap.to(hireBtn, { scale: 1, duration: 0.2 });
+        hireBtn.addEventListener('mouseenter', onEnter);
+        hireBtn.addEventListener('mouseleave', onLeave);
+      }
+
+      // ── 6. Social links — stagger pop-in ────────────────────────────────────
+      gsap.set('.social-links a', { scale: 0, rotation: -180, opacity: 0 });
+      gsap.to('.social-links a', {
+        scale: 1, rotation: 0, opacity: 1,
+        stagger: 0.1, ease: 'back.out(2)', delay: 1.8,
+      });
+
+      // ── 7. Hero image — clip-path entrance then float + overlay pulse ────────
+      gsap.set('.hero-image-wrapper', { clipPath: 'inset(100% 0% 0% 0%)' });
+      gsap.to('.hero-image-wrapper', {
+        clipPath: 'inset(0% 0% 0% 0%)',
+        duration: 1.2, ease: 'power4.out', delay: 0.5,
+        onComplete() {
+          // Continuous float after entrance removed as requested
+          // Overlay breathing glow pulse
+          gsap.to('.hero-image-overlay', {
+            opacity: 0.2, duration: 4, ease: 'sine.inOut', yoyo: true, repeat: -1,
+            delay: 0,
+          });
+        },
+      });
+      // Start overlay at 0.6 opacity
+      gsap.set('.hero-image-overlay', { opacity: 0.6 });
+
+      // ── 8. Decorative rings — continuous spin + dot pulse ────────────────────
+      gsap.to('.ring', { rotation: 360, repeat: -1, duration: 12, ease: 'none' });
+      gsap.to('.ring-small', { rotation: -360, repeat: -1, duration: 8, ease: 'none' });
+      gsap.to('.dot-cyan', {
+        scale: 1.5, opacity: 0.3,
+        duration: 1.5, ease: 'sine.inOut', yoyo: true, repeat: -1,
+      });
+
+      // ── 9. About section — scroll-triggered entrance ─────────────────────────
+      // Image slide from left
+      gsap.fromTo('.about-image',
+        { x: -80, opacity: 0 },
         {
-          opacity: 1,
-          y: 0,
-          duration: 1.2,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: sec,
-            start: 'top 85%',
-            toggleActions: 'play none none reverse'
-          }
+          x: 0, opacity: 1, duration: 1, ease: 'power3.out',
+          scrollTrigger: { trigger: '#about', start: 'top 75%' }
         }
       );
-    });
 
-    // Tech item stagger
-    gsap.fromTo('.tech-item',
-      { opacity: 0, scale: 0.5, y: 30 },
-      {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        stagger: 0.05,
-        duration: 0.8,
-        ease: "back.out(1.5)",
-        scrollTrigger: {
-          trigger: '.tech-grid',
-          start: 'top 85%',
+      // About title — char stagger on scroll
+      const aboutTitleSplit = new SplitText('.about-title', { type: 'chars' });
+      gsap.set(aboutTitleSplit.chars, { opacity: 0, y: 30, rotationX: -60 });
+      gsap.to(aboutTitleSplit.chars, {
+        opacity: 1, y: 0, rotationX: 0,
+        stagger: 0.03, duration: 0.6, ease: 'back.out(1.5)',
+        scrollTrigger: { trigger: '#about', start: 'top 75%' },
+      });
+
+      // About desc — word fade on scroll
+      const aboutDescSplit = new SplitText('.about-desc', { type: 'words' });
+      gsap.set(aboutDescSplit.words, { opacity: 0, y: 20 });
+      gsap.to(aboutDescSplit.words, {
+        opacity: 1, y: 0,
+        stagger: 0.03, duration: 0.5, ease: 'power2.out',
+        scrollTrigger: { trigger: '.about-desc', start: 'top 85%' },
+      });
+
+      // About role — scaleX wipe from left
+      gsap.fromTo('.about-role',
+        { scaleX: 0, opacity: 0, transformOrigin: 'left center' },
+        {
+          scaleX: 1, opacity: 1, duration: 0.8, ease: 'power3.out',
+          scrollTrigger: { trigger: '#about', start: 'top 75%' }
         }
-      }
-    );
+      );
 
-    // Skill pill stagger
-    gsap.fromTo('.skill-pill',
-      { opacity: 0, x: -30, scale: 0.9 },
-      {
-        opacity: 1,
-        x: 0,
-        scale: 1,
-        stagger: 0.05,
-        duration: 0.7,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: '.skills-modern-grid',
-          start: 'top 85%',
+      // ── Remaining scroll-triggered section animations ────────────────────────
+      const sections = gsap.utils.toArray('.anim-section');
+      sections.forEach(sec => {
+        gsap.fromTo(sec,
+          { opacity: 0, y: 80 },
+          {
+            opacity: 1, y: 0, duration: 1.2, ease: 'power3.out',
+            scrollTrigger: { trigger: sec, start: 'top 85%', toggleActions: 'play none none reverse' }
+          }
+        );
+      });
+
+      // Tech grid stagger
+      gsap.fromTo('.tech-item',
+        { opacity: 0, scale: 0.5, y: 30 },
+        {
+          opacity: 1, scale: 1, y: 0, stagger: 0.05, duration: 0.8, ease: 'back.out(1.5)',
+          scrollTrigger: { trigger: '.tech-grid', start: 'top 85%' }
         }
-      }
-    );
+      );
 
-    // Timeline item stagger
-    gsap.fromTo('.horizontal-timeline-item',
-      { opacity: 0, y: 30 },
-      {
-        opacity: 1,
-        y: 0,
-        stagger: 0.15,
-        duration: 0.8,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: '.horizontal-timeline-container',
-          start: 'top 85%',
+      // Skills horizontal conveyor belt
+      (() => {
+        const track = document.querySelector('.skills-track');
+        const outer = document.querySelector('.skills-track-outer');
+        if (!track || !outer) return;
+        const getSlideDistance = () => -(track.scrollWidth - outer.offsetWidth);
+        gsap.to(track, {
+          x: getSlideDistance, ease: 'none',
+          scrollTrigger: { trigger: '#skills', start: 'top 70%', end: 'bottom 30%', scrub: 1.5, invalidateOnRefresh: true },
+        });
+        window.addEventListener('resize', () => ScrollTrigger.refresh());
+      })();
+
+      // Education timeline
+      gsap.fromTo('.horizontal-timeline-item',
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1, y: 0, stagger: 0.15, duration: 0.8, ease: 'power2.out',
+          scrollTrigger: { trigger: '.horizontal-timeline-container', start: 'top 85%' }
         }
-      }
-    );
-
-    // Draw the timeline line
-    gsap.fromTo('.horizontal-line',
-      { width: 0 },
-      {
-        width: '100%',
-        duration: 1.5,
-        ease: "power3.inOut",
-        scrollTrigger: {
-          trigger: '.horizontal-timeline-container',
-          start: 'top 85%',
+      );
+      gsap.fromTo('.horizontal-line',
+        { width: 0 },
+        {
+          width: '100%', duration: 1.5, ease: 'power3.inOut',
+          scrollTrigger: { trigger: '.horizontal-timeline-container', start: 'top 85%' }
         }
-      }
-    );
+      );
 
-    // Project cards individual directional animations
-    const projectTrigger = {
-      trigger: '.projects-grid',
-      start: 'top 85%'
-    };
+      // Project cards
+      const projectTrigger = { trigger: '.projects-grid', start: 'top 85%' };
+      gsap.fromTo('.project-card-0', { opacity: 0, x: -150 }, { opacity: 1, x: 0, duration: 1.2, ease: 'power3.out', scrollTrigger: projectTrigger });
+      gsap.fromTo('.project-card-1', { opacity: 0, y: 150 }, { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out', scrollTrigger: projectTrigger });
+      gsap.fromTo('.project-card-2', { opacity: 0, x: 150 }, { opacity: 1, x: 0, duration: 1.2, ease: 'power3.out', scrollTrigger: projectTrigger });
 
-    gsap.fromTo('.project-card-0', 
-      { opacity: 0, x: -150 },
-      { opacity: 1, x: 0, duration: 1.2, ease: "power3.out", scrollTrigger: projectTrigger }
-    );
+      // Contact
+      gsap.fromTo('.contact-info-side', { opacity: 0, x: -100 }, { opacity: 1, x: 0, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: '.contact-split-section', start: 'top 80%' } });
+      gsap.fromTo('.contact-form-side', { opacity: 0, x: 100 }, { opacity: 1, x: 0, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: '.contact-split-section', start: 'top 80%' } });
+      gsap.fromTo('.contact-pill-anim', { opacity: 0, y: 30 }, { opacity: 1, y: 0, stagger: 0.15, duration: 0.8, ease: 'back.out(1.5)', scrollTrigger: { trigger: '.contact-info-side', start: 'top 75%' } });
+      gsap.fromTo('.form-anim', { opacity: 0, y: 30 }, { opacity: 1, y: 0, stagger: 0.15, duration: 0.8, ease: 'back.out(1.5)', scrollTrigger: { trigger: '.contact-form-side', start: 'top 75%' } });
+      gsap.fromTo('.footer-content', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1, ease: 'power2.out', scrollTrigger: { trigger: '.portfolio-footer', start: 'top 95%' } });
 
-    gsap.fromTo('.project-card-1', 
-      { opacity: 0, y: 150 },
-      { opacity: 1, y: 0, duration: 1.2, ease: "power3.out", scrollTrigger: projectTrigger }
-    );
-
-    gsap.fromTo('.project-card-2', 
-      { opacity: 0, x: 150 },
-      { opacity: 1, x: 0, duration: 1.2, ease: "power3.out", scrollTrigger: projectTrigger }
-    );
-
-    // Contact Section Parallax & Stagger
-    gsap.fromTo('.contact-info-side',
-      { opacity: 0, x: -100 },
-      { opacity: 1, x: 0, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: '.contact-split-section', start: 'top 80%' } }
-    );
-    
-    gsap.fromTo('.contact-form-side',
-      { opacity: 0, x: 100 },
-      { opacity: 1, x: 0, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: '.contact-split-section', start: 'top 80%' } }
-    );
-
-    gsap.fromTo('.contact-pill-anim',
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, stagger: 0.15, duration: 0.8, ease: "back.out(1.5)", scrollTrigger: { trigger: '.contact-info-side', start: 'top 75%' } }
-    );
-
-    gsap.fromTo('.form-anim',
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, stagger: 0.15, duration: 0.8, ease: "back.out(1.5)", scrollTrigger: { trigger: '.contact-form-side', start: 'top 75%' } }
-    );
-
-    gsap.fromTo('.footer-content',
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 1, ease: "power2.out", scrollTrigger: { trigger: '.portfolio-footer', start: 'top 95%' } }
-    );
+    }); // end gsap.context
 
     return () => {
       lenis.destroy();
-      ScrollTrigger.getAll().forEach(t => t.kill());
+      ctx.revert(); // kills all animations + ScrollTriggers created inside
     };
   }, []);
 
@@ -177,12 +266,34 @@ export default function Home() {
     <div className="container" ref={containerRef}>
       <nav className="navbar anim-section">
         <div className="logo">Eti<span>.</span></div>
-        <div className="nav-email">helloeti7@gmail.com</div>
-        <button className="menu-btn" aria-label="Menu">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+
+        <ul className={`nav-links ${isMenuOpen ? 'active' : ''}`} id="nav-links">
+          <li><a href="#about" onClick={() => setIsMenuOpen(false)}>About</a></li>
+          <li><a href="#technologies" onClick={() => setIsMenuOpen(false)}>Skills</a></li>
+          <li><a href="#projects" onClick={() => setIsMenuOpen(false)}>Projects</a></li>
+          <li><a href="#education" onClick={() => setIsMenuOpen(false)}>Education</a></li>
+          <li><a href="#contact" onClick={() => setIsMenuOpen(false)}>Contact</a></li>
+        </ul>
+
+        <div className="nav-right">
+          <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle Theme">
+            {theme === 'dark' ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            )}
+          </button>
+          <a href="#" className="nav-cta" onClick={(e) => { e.preventDefault(); /* downloadResume logic */ }}>Download CV</a>
+          <button
+            className={`menu-btn ${isMenuOpen ? 'open' : ''}`}
+            aria-label="Menu"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
       </nav>
 
       <main className="hero anim-section">
@@ -308,27 +419,32 @@ export default function Home() {
           <h2 className="section-title">Skills</h2>
           <p className="section-subtitle">My Technical Level</p>
         </div>
-        <div className="skills-modern-grid">
-          {[
-            { name: "HTML5", level: "Expert" },
-            { name: "Next.JS", level: "Intermediate" },
-            { name: "TypeScript", level: "Expert" },
-            { name: "Tailwind CSS", level: "Intermediate" },
-            { name: "JavaScript", level: "Expert" },
-            { name: "React.JS", level: "Expert" },
-            { name: "Node.JS", level: "Expert" },
-            { name: "SQL", level: "Intermediate" },
-            { name: "Express.JS", level: "Expert" },
-            { name: "Docker", level: "Beginner" },
-            { name: "MongoDB", level: "Expert" },
-          ].map((skill, idx) => (
-            <div key={idx} className="skill-pill">
-              <div className="skill-pill-content">
-                <span className="skill-item-name">{skill.name}</span>
-                <span className="skill-level">{skill.level}</span>
+        {/* Horizontal conveyor belt track */}
+        <div className="skills-track-outer">
+          <div className="skills-track">
+            {[
+              { name: "HTML5", level: "Expert" },
+              { name: "Next.JS", level: "Intermediate" },
+              { name: "TypeScript", level: "Expert" },
+              { name: "Tailwind CSS", level: "Intermediate" },
+              { name: "JavaScript", level: "Expert" },
+              { name: "React.JS", level: "Expert" },
+              { name: "Node.JS", level: "Expert" },
+              { name: "SQL", level: "Intermediate" },
+              { name: "Express.JS", level: "Expert" },
+              { name: "Docker", level: "Beginner" },
+              { name: "MongoDB", level: "Expert" },
+              { name: "GraphQL", level: "Intermediate" },
+              { name: "REST API", level: "Expert" },
+            ].map((skill, idx) => (
+              <div key={idx} className="skill-pill">
+                <div className="skill-pill-content">
+                  <span className="skill-item-name">{skill.name}</span>
+                  <span className="skill-level">{skill.level}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
@@ -366,20 +482,41 @@ export default function Home() {
         </div>
         <div className="projects-grid">
           {[
-            { id: "e-commerce", title: "E-Commerce Platform", img: "https://picsum.photos/seed/ecommerce/600/400", desc: "A full-scale e-commerce platform with secure payment integrations." },
-            { id: "task-manager", title: "Task Management Dashboard", img: "https://picsum.photos/seed/task/600/400", desc: "Intuitive kanban-style project management tool with real-time updates." },
-            { id: "portfolio-gen", title: "AI Portfolio Generator", img: "https://picsum.photos/seed/ai/600/400", desc: "SaaS application that generates standalone portfolios using OpenAI." }
+            {
+              id: "e-commerce",
+              title: "FoodHub – Smart Food Ordering Platform",
+              subtitle: "Role-based Food Delivery System",
+              img: "https://i.ibb.co.com/1G7xTK5Q/foodhub-mockup.png",
+              desc: "A full-scale e-commerce platform with secure payment integrations."
+            },
+            {
+              id: "moviebaz",
+              title: "MovieBaz – Interactive Movie Platform",
+              subtitle: "Movie Discovery & Watchlist System",
+              img: "https://i.ibb.co.com/kgg1hkdT/earnify-mockup.png", // Note: User might need to check this img
+              desc: "Explore movies, leave reviews, and manage your personal watchlists."
+            },
+            {
+              id: "earnify",
+              title: "Earnify – Micro Task Ecosystem",
+              subtitle: "Task Management & Earning Platform",
+              img: "https://i.ibb.co.com/v6b7Mrb0/project-mockup.png", // Note: User might need to check this img
+              desc: "A platform connecting task creators and workers in a micro-earning economy."
+            }
           ].map((project, idx) => (
-             <div key={project.id} className={`project-card project-card-${idx}`}>
-               <div className="project-img-wrapper">
-                 <img src={project.img} alt={project.title} className="project-img" />
-               </div>
-               <div className="project-info">
-                 <h3 className="project-title">{project.title}</h3>
-                 <p className="project-card-desc">{project.desc}</p>
-                 <a href={`/projects/${project.id}`} className="view-details-btn">View Details</a>
-               </div>
-             </div>
+            <div key={project.id} className={`project-card project-card-${idx}`}>
+              <div className="project-img-wrapper">
+                <img src={project.img} alt={project.title} className="project-img" />
+              </div>
+              <div className="project-info">
+                <h3 className="project-title">{project.title}</h3>
+                <p className="project-subtitle" style={{ color: 'var(--accent-color)', fontSize: '13px', fontWeight: '600', marginBottom: '10px' }}>
+                  {project.subtitle}
+                </p>
+                <p className="project-card-desc">{project.desc}</p>
+                <Link href={`/projects/${project.id}`} className="view-details-btn">View Details</Link>
+              </div>
+            </div>
           ))}
         </div>
       </section>
@@ -389,9 +526,9 @@ export default function Home() {
         <div className="contact-split-container">
           {/* Left Side: Info */}
           <div className="contact-info-side">
-            <h2 className="split-title">Let's build something <span>incredible</span></h2>
-            <p className="split-desc">I'm currently available for freelance work and full-time opportunities. Drop a message or reach out on any platform.</p>
-            
+            <h2 className="split-title">Lets build something <span>incredible</span></h2>
+            <p className="split-desc">Im currently available for freelance work and full-time opportunities. Drop a message or reach out on any platform.</p>
+
             <div className="contact-links-stack">
               <a href="mailto:helloeti7@gmail.com" className="contact-pill contact-pill-anim">
                 <div className="pill-icon">
@@ -450,9 +587,9 @@ export default function Home() {
           <div className="footer-logo">Eti<span>.</span></div>
           <p className="footer-copyright">&copy; {new Date().getFullYear()} Farjana Eti. All rights reserved.</p>
           <div className="footer-links">
-             <a href="#about">About</a>
-             <a href="#projects">Projects</a>
-             <a href="#contact">Contact</a>
+            <a href="#about">About</a>
+            <a href="#projects">Projects</a>
+            <a href="#contact">Contact</a>
           </div>
         </div>
       </footer>

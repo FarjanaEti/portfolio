@@ -1,16 +1,57 @@
 :root {
   --bg-color: #050505;
+  --bg-alpha: rgba(5, 5, 5, 0.9);
   --text-primary: #ffffff;
   --text-secondary: #aaaaaa;
   --accent-color: #ff5757;
   --accent-gradient: linear-gradient(90deg, #ff5757 0%, #ff8257 100%);
   --cyan-accent: #00e0ff;
+  --card-bg: rgba(255, 255, 255, 0.02);
+  --card-border: rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme='light'] {
+  --bg-color: #f8f9fa;
+  --bg-alpha: rgba(248, 249, 250, 0.9);
+  --text-primary: #111111;
+  --text-secondary: #444444;
+  --card-bg: rgba(0, 0, 0, 0.03);
+  --card-border: rgba(0, 0, 0, 0.08);
 }
 
 * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  cursor: none !important;
+}
+
+/* Custom Cursor */
+.custom-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  background-color: #a855f7;
+  /* Solid purple */
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.custom-cursor-bubble {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #a855f7;
+  /* Transparent with purple border */
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transition: background-color 0.3s;
 }
 
 body {
@@ -20,6 +61,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 a {
@@ -50,8 +92,8 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 30px 0;
-  z-index: 10;
+  padding: 40px 0;
+  z-index: 100;
   position: relative;
 }
 
@@ -69,17 +111,92 @@ button {
   line-height: 1;
 }
 
-.nav-email {
-  font-size: 14px;
+.nav-links {
+  display: flex;
+  gap: 35px;
+  list-style: none;
+}
+
+.nav-links li a {
+  font-size: 15px;
+  font-weight: 500;
   color: var(--text-secondary);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nav-links li a:hover {
+  color: var(--text-primary);
+}
+
+.nav-links li a::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-color);
+  transition: width 0.3s ease;
+}
+
+.nav-links li a:hover::after {
+  width: 100%;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.theme-toggle {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: rotate(15deg) scale(1.1);
+}
+
+.nav-cta {
+  background: var(--accent-gradient);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 5px 15px rgba(255, 87, 87, 0.2);
+}
+
+.nav-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 87, 87, 0.4);
 }
 
 .menu-btn {
-  display: flex;
+  display: none; /* Hidden on desktop */
   flex-direction: column;
   gap: 6px;
   background: transparent;
-  width: 30px;
+  width: 25px;
+  position: relative;
+  z-index: 101;
 }
 
 .menu-btn span {
@@ -90,13 +207,15 @@ button {
   transition: 0.3s;
 }
 
-.menu-btn span:nth-child(2) {
-  width: 70%;
-  align-self: flex-end;
+/* Hamburger animations */
+.menu-btn.open span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 6px);
 }
-
-.menu-btn:hover span:nth-child(2) {
-  width: 100%;
+.menu-btn.open span:nth-child(2) {
+  opacity: 0;
+}
+.menu-btn.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -6px);
 }
 
 /* Hero Section */
@@ -133,7 +252,7 @@ button {
   font-size: 22px;
   margin-top: 15px;
   font-weight: 400;
-  color: #eeeeee;
+  color: var(--text-primary);
 }
 
 .hire-btn {
@@ -237,15 +356,54 @@ button {
   align-items: center;
 }
 
+/* Soft ambient glow behind the image to help it melt into the dark background */
+.hero-image-wrapper::before {
+  content: '';
+  position: absolute;
+  width: 55%;
+  height: 70%;
+  background: radial-gradient(ellipse at center,
+      rgba(255, 87, 87, 0.10) 0%,
+      rgba(0, 224, 255, 0.06) 50%,
+      transparent 75%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(40px);
+}
+
 .hero-image {
   height: 100%;
   width: auto;
   /* width adjusts to height to keep aspect ratio */
   max-width: none;
   object-fit: cover;
-  /* Expanded mask to reveal hands and forehead while fading the edges */
-  -webkit-mask-image: radial-gradient(ellipse 60% 85% at 50% 50%, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0) 90%);
-  mask-image: radial-gradient(ellipse 60% 85% at 50% 50%, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0) 90%);
+  /* Layered mask: horizontal side-fade blends image into text columns,
+     vertical radial fade softens top/bottom */
+  -webkit-mask-image:
+    linear-gradient(to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.6) 18%,
+      black 32%,
+      black 68%,
+      rgba(0, 0, 0, 0.6) 82%,
+      transparent 100%),
+    radial-gradient(ellipse 65% 90% at 50% 48%,
+      black 45%,
+      transparent 88%);
+  mask-image:
+    linear-gradient(to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.6) 18%,
+      black 32%,
+      black 68%,
+      rgba(0, 0, 0, 0.6) 82%,
+      transparent 100%),
+    radial-gradient(ellipse 65% 90% at 50% 48%,
+      black 45%,
+      transparent 88%);
+  -webkit-mask-composite: destination-in;
+  mask-composite: intersect;
 }
 
 /* Right Content */
@@ -472,6 +630,14 @@ button {
   align-items: center;
 }
 
+/* Skills section: compact padding, no forced viewport height */
+#skills {
+  padding: 40px 0;
+  justify-content: center;
+  width: 100%;
+  overflow: visible;
+}
+
 .section-header {
   text-align: center;
   margin-bottom: 60px;
@@ -509,8 +675,8 @@ button {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -539,7 +705,7 @@ button {
   text-align: center;
 }
 
-/* Modern Skills Grid */
+/* Modern Skills Grid — kept for fallback / old reference */
 .skills-modern-grid {
   display: flex;
   flex-wrap: wrap;
@@ -549,11 +715,41 @@ button {
   margin-top: 20px;
 }
 
+/* Horizontal conveyor belt */
+.skills-track-outer {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: 20px 0 30px;
+  /* Edge-fade masks so pills dissolve at the left/right edges */
+  -webkit-mask-image: linear-gradient(to right,
+      transparent 0%,
+      black 8%,
+      black 92%,
+      transparent 100%);
+  mask-image: linear-gradient(to right,
+      transparent 0%,
+      black 8%,
+      black 92%,
+      transparent 100%);
+}
+
+.skills-track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 20px;
+  width: max-content;
+  /* expands to fit all pills in one row */
+  will-change: transform;
+  padding: 4px 2px;
+  /* room for box-shadow */
+}
+
 .skill-pill {
   padding: 15px 30px;
   border-radius: 50px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
@@ -565,7 +761,10 @@ button {
 .skill-pill::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: var(--accent-gradient);
   opacity: 0;
   transition: opacity 0.3s;
@@ -643,14 +842,14 @@ button {
 
 .horizontal-timeline-item {
   position: relative;
-  padding-top: 40px; 
+  padding-top: 40px;
   flex: 1;
   max-width: 450px;
 }
 
 .horizontal-timeline-dot {
   position: absolute;
-  top: 12px; 
+  top: 12px;
   left: 30px;
   width: 16px;
   height: 16px;
@@ -667,8 +866,8 @@ button {
 }
 
 .horizontal-timeline-content {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   padding: 30px;
   border-radius: 20px;
   backdrop-filter: blur(10px);
@@ -695,13 +894,13 @@ button {
 .timeline-title {
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 5px;
 }
 
 .timeline-inst {
   font-size: 14px;
-  color: #ccc;
+  color: var(--text-secondary);
   font-weight: 500;
   margin-bottom: 15px;
 }
@@ -723,8 +922,8 @@ button {
 }
 
 .project-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 20px;
   overflow: hidden;
   width: 100%;
@@ -766,7 +965,7 @@ button {
 .project-title {
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 10px;
 }
 
@@ -793,7 +992,7 @@ button {
 
 .project-card:hover .view-details-btn {
   background: var(--accent-gradient);
-  color: #fff;
+  color: #fff; /* White looks better on accent gradient regardless of theme */
 }
 
 /* Project Detail Page */
@@ -828,7 +1027,7 @@ button {
 .project-detail-title {
   font-size: 45px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .project-detail-image-wrapper {
@@ -837,7 +1036,7 @@ button {
   border-radius: 20px;
   overflow: hidden;
   margin-bottom: 60px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--card-border);
 }
 
 .project-detail-image {
@@ -859,9 +1058,9 @@ button {
 .detail-section h2 {
   font-size: 24px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--card-border);
   padding-bottom: 10px;
 }
 
@@ -878,8 +1077,8 @@ button {
 }
 
 .sidebar-box {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   padding: 30px;
   border-radius: 20px;
   backdrop-filter: blur(10px);
@@ -927,7 +1126,7 @@ button {
 
 .project-link-btn.live {
   background: var(--accent-gradient);
-  color: #fff;
+  color: #fff; /* White looks better on accent gradient regardless of theme */
 }
 
 .project-link-btn.live:hover {
@@ -938,7 +1137,7 @@ button {
 .project-link-btn.github {
   background: rgba(255, 255, 255, 0.05);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--card-border);
 }
 
 .project-link-btn.github:hover {
@@ -969,7 +1168,7 @@ button {
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: 20px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .split-title span {
@@ -994,11 +1193,11 @@ button {
   align-items: center;
   gap: 15px;
   padding: 15px 25px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 50px;
   text-decoration: none;
-  color: #fff;
+  color: var(--text-primary);
   font-weight: 500;
   font-size: 15px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1009,7 +1208,10 @@ button {
 .contact-pill::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: var(--accent-gradient);
   opacity: 0;
   transition: opacity 0.3s;
@@ -1053,8 +1255,8 @@ button {
 /* Right Side: Form */
 .contact-form-side {
   flex: 1.2;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   padding: 50px;
   border-radius: 30px;
   backdrop-filter: blur(20px);
@@ -1125,7 +1327,7 @@ button {
 .portfolio-footer {
   margin-top: 100px;
   padding: 40px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--card-border);
   display: flex;
   justify-content: center;
 }
@@ -1143,7 +1345,7 @@ button {
 .footer-logo {
   font-size: 24px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .footer-logo span {
@@ -1177,17 +1379,49 @@ button {
     flex-direction: column;
     text-align: center;
   }
-}
 
 @media (max-width: 1024px) {
+  .nav-links {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: var(--bg-alpha);
+    backdrop-filter: blur(25px);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 35px;
+    transition: 0.5s cubic-bezier(0.8, 0, 0.2, 1);
+    z-index: 99;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .nav-links.active {
+    right: 0;
+  }
+
+  .nav-links li a {
+    font-size: 20px;
+  }
+
+  .menu-btn {
+    display: flex;
+  }
+
   .contact-split-container {
     flex-direction: column;
   }
+
   .hero {
     flex-direction: column;
     justify-content: flex-start;
-    gap: 300px;
-    /* space for the absolute background image */
+    gap: 50px;
+    padding-top: 60px;
+    height: auto;
+    min-height: 100vh;
+    text-align: center;
   }
 
   .hero-left,
@@ -1196,17 +1430,26 @@ button {
     align-items: center;
     max-width: 100%;
     margin-top: 0;
+    padding: 0 10px;
   }
 
   .hero-center {
-    top: 300px;
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
     height: 400px;
-    transform: translateX(-50%);
+    margin: 20px 0;
+    pointer-events: none;
   }
 
   .hero-image {
-    -webkit-mask-image: radial-gradient(ellipse 60% 85% at 50% 50%, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0) 90%);
-    mask-image: radial-gradient(ellipse 60% 85% at 50% 50%, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0) 90%);
+    height: 100%;
+    -webkit-mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, black 40%, transparent 85%);
+    mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, black 40%, transparent 85%);
+    -webkit-mask-composite: unset;
+    mask-composite: unset;
   }
 
   .social-links {
@@ -1215,6 +1458,7 @@ button {
     bottom: auto;
     margin-top: 30px;
     justify-content: center;
+    left: auto;
   }
 
   .dribbble-link {
@@ -1226,6 +1470,8 @@ button {
     position: relative;
     margin-top: 50px;
     justify-content: center;
+    right: auto;
+    bottom: auto;
   }
 
   .decorations {
@@ -1277,4 +1523,20 @@ button {
     grid-template-columns: 1fr;
     gap: 40px;
   }
+}
+
+@media (max-width: 480px) {
+  .greeting-text {
+    font-size: 36px;
+  }
+  
+  .nav-cta {
+    display: none;
+  }
+
+  .logo {
+    font-size: 24px;
+  }
+}
+
 }
