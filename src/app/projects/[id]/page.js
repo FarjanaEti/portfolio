@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Footer from '@/components/Footer';
 
 const projectsDatabase = {
   "e-commerce": {
@@ -92,66 +93,69 @@ export default async function ProjectDetailsPage({ params }) {
   }
 
   return (
-    <div className="container project-details-page">
-      <nav className="project-nav">
-        <Link href="/" className="back-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to Home
-        </Link>
-      </nav>
+    <div className="project-page-wrapper">
+      <div className="container project-details-page">
+        <nav className="project-nav">
+          <Link href="/" className="back-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Back to Home
+          </Link>
+        </nav>
 
-      <div className="project-detail-header">
-        <h1 className="project-detail-title">{project.title}</h1>
-        <p className="project-detail-subtitle" style={{ color: 'var(--accent-color)', fontSize: '18px', fontWeight: '500', marginTop: '10px', maxWidth: '800px' }}>
-          {project.subtitle}
-        </p>
-      </div>
-
-      <div className="project-detail-image-wrapper">
-        <img src={project.image} alt={project.title} className="project-detail-image" />
-      </div>
-
-      <div className="project-detail-grid">
-        <div className="project-main-content">
-          <section className="detail-section">
-            <h2>Overview</h2>
-            <p>{project.desc}</p>
-          </section>
-
-          <section className="detail-section">
-            <h2>Challenges Faced</h2>
-            <p>{project.challenges}</p>
-          </section>
-
-          <section className="detail-section">
-            <h2>Future Plans</h2>
-            <p>{project.future}</p>
-          </section>
+        <div className="project-detail-header">
+          <h1 className="project-detail-title">{project.title}</h1>
+          <p className="project-detail-subtitle" style={{ color: 'var(--accent-color)', fontSize: '18px', fontWeight: '500', marginTop: '10px', maxWidth: '800px' }}>
+            {project.subtitle}
+          </p>
         </div>
 
-        <div className="project-sidebar">
-          <div className="sidebar-box">
-            <h3>Tech Stack</h3>
-            <div className="tech-tags">
-              {project.techStack.map(t => <span key={t} className="tech-tag">{t}</span>)}
+        <div className="project-detail-image-wrapper">
+          <img src={project.image} alt={project.title} className="project-detail-image" />
+        </div>
+
+        <div className="project-detail-grid">
+          <div className="project-main-content">
+            <section className="detail-section">
+              <h2>Overview</h2>
+              <p>{project.desc}</p>
+            </section>
+
+            <section className="detail-section">
+              <h2>Challenges Faced</h2>
+              <p>{project.challenges}</p>
+            </section>
+
+            <section className="detail-section">
+              <h2>Future Plans</h2>
+              <p>{project.future}</p>
+            </section>
+          </div>
+
+          <div className="project-sidebar">
+            <div className="sidebar-box">
+              <h3>Tech Stack</h3>
+              <div className="tech-tags">
+                {project.techStack.map(t => <span key={t} className="tech-tag">{t}</span>)}
+              </div>
+            </div>
+
+            <div className="sidebar-box links-box">
+              <h3>Links</h3>
+              <a href={project.liveLink} target="_blank" rel="noreferrer" className="project-link-btn live">
+                View Live Demo
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>
+              <a href={project.githubClient} target="_blank" rel="noreferrer" className="project-link-btn github">
+                Client GitHub
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+              </a>
             </div>
           </div>
-
-          <div className="sidebar-box links-box">
-            <h3>Links</h3>
-            <a href={project.liveLink} target="_blank" rel="noreferrer" className="project-link-btn live">
-              View Live Demo
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-            </a>
-            <a href={project.githubClient} target="_blank" rel="noreferrer" className="project-link-btn github">
-              Client GitHub
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-            </a>
-          </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
